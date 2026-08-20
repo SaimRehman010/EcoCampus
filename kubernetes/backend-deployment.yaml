@@ -1,0 +1,82 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: ecocampus
+  labels:
+    app: ecocampus-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecocampus-backend
+  template:
+    metadata:
+      labels:
+        app: ecocampus-backend
+    spec:
+      containers:
+        - name: backend
+          image: ecocampus/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecocampus-config
+                  key: PORT_BACKEND
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: ecocampus-config
+                  key: NODE_ENV
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: ecocampus-config
+                  key: MONGO_URI
+            - name: PYTHON_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecocampus-config
+                  key: PYTHON_SERVICE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ecocampus-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: ecocampus
+spec:
+  selector:
+    app: ecocampus-backend
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP

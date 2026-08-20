@@ -1,0 +1,23 @@
+# Environment variables (MUST BE IGNORED)
+.env
+.env.local
+.env.development
+.env.production
+
+# Node Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Python Virtual Envs & Cache
+python-service/venv/
+ai-service/venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Build folders & Logs
+frontend/dist/
+frontend/build/
+dist/
+*.log

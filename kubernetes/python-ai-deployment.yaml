@@ -1,0 +1,135 @@
+﻿# ==============================================================================
+# Python Resource Analyzer (Port 5001)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-analyzer-deployment
+  namespace: ecocampus
+  labels:
+    app: python-analyzer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-analyzer
+  template:
+    metadata:
+      labels:
+        app: python-analyzer
+    spec:
+      containers:
+        - name: analyzer
+          image: ecocampus/python-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+          env:
+            - name: PORT
+              value: "5001"
+            - name: DEFAULT_RATE_PER_KWH
+              value: "0.15"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-analyzer-service
+  namespace: ecocampus
+spec:
+  selector:
+    app: python-analyzer
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+  type: ClusterIP
+---
+# ==============================================================================
+# Python AI & RAG Microservice (Port 5002)
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service-deployment
+  namespace: ecocampus
+  labels:
+    app: ai-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+        - name: ai-service
+          image: ecocampus/ai-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5002
+          env:
+            - name: PORT
+              value: "5002"
+            - name: EXPRESS_BACKEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecocampus-config
+                  key: EXPRESS_BACKEND_URL
+            - name: PYTHON_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecocampus-config
+                  key: PYTHON_SERVICE_URL
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ecocampus-secrets
+                  key: GEMINI_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ecocampus-secrets
+                  key: OPENAI_API_KEY
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1024Mi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5002
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: ecocampus
+spec:
+  selector:
+    app: ai-service
+  ports:
+    - protocol: TCP
+      port: 5002
+      targetPort: 5002
+  type: ClusterIP
