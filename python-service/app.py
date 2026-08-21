@@ -22,6 +22,15 @@ CORS(app)
 analyzer = ResourceAnalyzer()
 
 
+@app.route("/", methods=["GET"])
+def home():
+    """Root endpoint to confirm service health"""
+    return jsonify({
+        "status": "ok",
+        "message": "EcoCampus Python Resource Analyzer Microservice is running!"
+    }), 200
+
+
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Health check endpoint for Python microservice"""
