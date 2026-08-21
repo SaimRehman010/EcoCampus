@@ -1,8 +1,15 @@
 import axios from "axios";
 
+// Helper function to format base URLs reliably and prevent path duplication or missing trailing /api
+const formatBaseUrl = (envVar, defaultUrl) => {
+  const url = envVar || defaultUrl;
+  const cleaned = url.replace(/\/+$/, ""); // Remove trailing slashes
+  return cleaned.endsWith("/api") ? cleaned : `${cleaned}/api`;
+};
+
 // Base URLs
 const EXPRESS_BASE_URL = import.meta.env.VITE_EXPRESS_URL || "http://localhost:5000/api";
-const PYTHON_BASE_URL = import.meta.env.VITE_PYTHON_URL || "http://localhost:5001/api";
+const PYTHON_BASE_URL = formatBaseUrl(import.meta.env.VITE_PYTHON_URL, "http://localhost:5001/api");
 const AI_BASE_URL = import.meta.env.VITE_AI_URL || "http://localhost:5002/api/ai";
 
 // 1. Express API Axios Client (Port 5000)
